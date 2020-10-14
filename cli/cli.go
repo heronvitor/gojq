@@ -46,6 +46,7 @@ type cli struct {
 	inputSlurp    bool
 	inputStream   bool
 	inputYAML     bool
+	inputCSV      bool
 
 	argnames  []string
 	argvalues []interface{}
@@ -68,6 +69,7 @@ type flagopts struct {
 	InputSlurp    bool              `short:"s" long:"slurp" description:"read all inputs into an array"`
 	InputStream   bool              `long:"stream" description:"parse input in stream fashon"`
 	InputYAML     bool              `long:"yaml-input" description:"read input as YAML"`
+	InputCSV      bool              `long:"csv-input" description:"read input as CSV"`
 	FromFile      string            `short:"f" long:"from-file" description:"load query from file"`
 	ModulePaths   []string          `short:"L" description:"directory to search modules from"`
 	Args          map[string]string `long:"arg" description:"set variable to string value" count:"2" unquote:"false"`
@@ -133,8 +135,8 @@ Synopsis:
 			return fmt.Errorf("negative indentation count: %d", *i)
 		}
 	}
-	cli.inputRaw, cli.inputSlurp, cli.inputStream, cli.inputYAML =
-		opts.InputRaw, opts.InputSlurp, opts.InputStream, opts.InputYAML
+	cli.inputRaw, cli.inputSlurp, cli.inputStream, cli.inputYAML, cli.inputCSV =
+		opts.InputRaw, opts.InputSlurp, opts.InputStream, opts.InputYAML, opts.InputCSV
 	for k, v := range opts.Args {
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, v)
@@ -251,6 +253,8 @@ func (cli *cli) createInputIter(args []string) inputIter {
 		newIter = newStreamInputIter
 	case cli.inputYAML:
 		newIter = newYAMLInputIter
+	case cli.inputCSV:
+		newIter = newCSVInputIter
 	default:
 		newIter = newJSONInputIter
 	}

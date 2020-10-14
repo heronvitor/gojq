@@ -3,6 +3,7 @@ package cli
 import (
 	"bufio"
 	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -16,6 +17,42 @@ import (
 type inputIter interface {
 	gojq.Iter
 	io.Closer
+}
+
+type csvInputIter struct {
+	dec   *csv.Reader
+	buf   *bytes.Buffer
+	fname string
+	err   error
+}
+
+func newCSVInputIter(r io.Reader, fname string) inputIter {
+	buf := new(bytes.Buffer)
+	dec := csv.NewReader(io.TeeReader(r, buf))
+	return &csvInputIter{dec: dec, buf: buf, fname: fname}
+}
+
+func (i *csvInputIter) Next() (interface{}, bool) {
+	if i.err != nil {
+		return nil, false
+	}
+
+	r, err := i.dec.Read()
+	if err != nil {
+		i.err = err
+		return err, false
+	}
+
+	v := make([]interface{}, len(r))
+	for i := range r {
+		v[i] = r[i]
+	}
+	return v, true
+}
+
+func (i *csvInputIter) Close() error {
+	i.err = io.EOF
+	return nil
 }
 
 type jsonInputIter struct {
